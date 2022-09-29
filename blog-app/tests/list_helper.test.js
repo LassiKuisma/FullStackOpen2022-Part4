@@ -88,7 +88,7 @@ describe('total likes', () => {
 
 describe('most liked blog', () => {
     test('when list has only one blog, equals that blog', () => {
-        const result = listHelper.mostLiked(listWithOneBlog)
+        const result = listHelper.favoriteBlog(listWithOneBlog)
 
         expect(result).toEqual({
             title: "Go To Statement Considered Harmful",
@@ -98,13 +98,13 @@ describe('most liked blog', () => {
     })
 
     test('is undefined on empty list', () => {
-        const result = listHelper.mostLiked([])
+        const result = listHelper.favoriteBlog([])
 
         expect(result).toEqual(undefined)
     })
 
     test('is correctly identified from a list of blogs', () => {
-        const result = listHelper.mostLiked(blogs)
+        const result = listHelper.favoriteBlog(blogs)
 
         expect(result).toEqual({
             title: "Canonical string reduction",
