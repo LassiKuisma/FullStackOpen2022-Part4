@@ -68,9 +68,44 @@ const mostBlogs = (blogs) => {
     return most
 }
 
+const mostLikes = (blogs) => {
+    if (blogs.length === 0) {
+        return undefined
+    }
+
+    const likesByAuthor = blogs.reduce((likes, current) => {
+        const oldValue = likes.get(current.author) || 0
+
+        likes.set(current.author, oldValue + current.likes)
+        return likes
+    }, new Map())
+
+    const most = Array.from(likesByAuthor.entries())
+        .map(entry => {
+            return {
+                author: entry[0],
+                likes: entry[1],
+            }
+        })
+        .reduce((previousHighest, current) => {
+            if (previousHighest === undefined) {
+                return current
+            }
+
+            if (current.likes > previousHighest.likes) {
+                return current
+            }
+
+            return previousHighest
+        }, undefined)
+
+    return most
+}
+
 module.exports = {
     dummy,
     totalLikes,
     favoriteBlog,
     mostBlogs,
+    mostLikes,
 }
