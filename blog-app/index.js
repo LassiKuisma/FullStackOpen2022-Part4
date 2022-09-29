@@ -48,6 +48,7 @@ app.post('/api/blogs', (request, response, next) => {
 })
 
 app.use(middleware.errorHandler)
+app.use(middleware.unknownEndpoint)
 
 const PORT = config.PORT
 app.listen(PORT, () => {
