@@ -32,11 +32,45 @@ const mostLiked = (blogs) => {
         author: highest.author,
         likes: highest.likes,
     }
+}
 
+const mostBlogs = (blogs) => {
+    if (blogs.length === 0) {
+        return undefined
+    }
+
+    const blogCountByAuthor = blogs.reduce((map, current) => {
+        const oldValue = map.get(current.author) || 0
+
+        map.set(current.author, oldValue + 1)
+        return map
+    }, new Map())
+
+    const most = Array.from(blogCountByAuthor.entries())
+        .map(entry => {
+            return {
+                author: entry[0],
+                blogs: entry[1],
+            }
+        })
+        .reduce((previousHighest, current) => {
+            if (previousHighest === undefined) {
+                return current
+            }
+
+            if (current.blogs > previousHighest.blogs) {
+                return current
+            }
+
+            return previousHighest
+        }, undefined)
+
+    return most
 }
 
 module.exports = {
     dummy,
     totalLikes,
     mostLiked,
+    mostBlogs,
 }
