@@ -1,0 +1,9 @@
+POST http://localhost:3003/api/blogs
+Content-Type: application/json
+
+{
+    "title": "How to break stuff",
+    "author": "Evil Blogposter",
+    "url": ">:)",
+    "likes": "four hundred"
+}
