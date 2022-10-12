@@ -45,6 +45,26 @@ test('blogs have unique id', async () => {
     expect(first.id).toBeDefined()
 })
 
+test('new blog can be posted', async () => {
+    const newBlog = {
+        title: 'Newly added blog',
+        author: 'Person Person',
+        url: 'url #2',
+        likes: 1,
+    }
+
+    await api.post('/api/blogs')
+        .send(newBlog)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length + 1)
+
+    const contents = blogsAtEnd.map(b => b.title)
+    expect(contents).toContain('Newly added blog')
+})
+
 afterAll(() => {
     mongoose.connection.close()
 })

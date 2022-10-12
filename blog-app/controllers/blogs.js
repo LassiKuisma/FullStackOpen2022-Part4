@@ -6,7 +6,7 @@ router.get('/', async (_request, response) => {
     response.json(blogs)
 })
 
-router.post('/', (request, response, next) => {
+router.post('/', async (request, response) => {
     const body = request.body
 
     const blog = new Blog({
@@ -16,12 +16,8 @@ router.post('/', (request, response, next) => {
         likes: body.likes || 0
     })
 
-    blog
-        .save()
-        .then(result => {
-            response.status(201).json(result)
-        })
-        .catch(error => next(error))
+    const result = await blog.save()
+    response.status(201).json(result)
 })
 
 module.exports = router
