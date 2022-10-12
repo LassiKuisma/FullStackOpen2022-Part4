@@ -129,6 +129,42 @@ test('trying to delete blog post that doesnt exist gives status 404', async () =
         .expect(400)
 })
 
+test('blog posts can be modified', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToModify = blogsAtStart[0]
+    const id = blogToModify.id
+
+    const newBlog = {
+        likes: 10000,
+    }
+
+    await api.put(`/api/blogs/${id}`)
+        .send(newBlog)
+        .expect(200)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
+
+    const updatedBlog = blogsAtEnd.find(blog => blog.title === 'Test blog #1')
+    expect(updatedBlog.likes).toBe(10000)
+})
+
+test('trying to modify blog post that doesnt exist gives error', async () => {
+    const id = 123321
+
+    const newBlog = {
+        likes: 10000,
+    }
+
+    await api.put(`/api/blogs/${id}`)
+        .send(newBlog)
+        .expect(400)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    console.log(blogsAtEnd)
+    expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
+})
+
 afterAll(() => {
     mongoose.connection.close()
 })
