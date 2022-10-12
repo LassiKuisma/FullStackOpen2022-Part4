@@ -65,6 +65,24 @@ test('new blog can be posted', async () => {
     expect(contents).toContain('Newly added blog')
 })
 
+test('posting a blog without specifying amount of likes creates new blog with zero likes', async () => {
+    const newBlog = {
+        title: 'A blog with no likes',
+        author: 'Dewey',
+        url: 'url #3',
+    }
+
+    await api.post('/api/blogs')
+        .send(newBlog)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    const blog = blogsAtEnd.find(blog => blog.title === 'A blog with no likes')
+
+    expect(blog.likes).toBe(0)
+})
+
 afterAll(() => {
     mongoose.connection.close()
 })
