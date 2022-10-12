@@ -107,6 +107,28 @@ test('trying to post a blog without author gives status 400', async () => {
         .expect(400)
 })
 
+test('blog posts can be deleted', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToDelete = blogsAtStart[0]
+    const id = blogToDelete.id
+
+    await api.delete(`/api/blogs/${id}`)
+        .expect(204)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length - 1)
+
+    const titles = blogsAtEnd.map(blog => blog.title)
+    expect(titles).not.toContain(blogToDelete.title)
+})
+
+test('trying to delete blog post that doesnt exist gives status 404', async () => {
+    const id = 123456
+
+    await api.delete(`/api/blogs/${id}`)
+        .expect(400)
+})
+
 afterAll(() => {
     mongoose.connection.close()
 })
