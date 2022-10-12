@@ -83,6 +83,30 @@ test('posting a blog without specifying amount of likes creates new blog with ze
     expect(blog.likes).toBe(0)
 })
 
+test('trying to post a blog without title gives status 400', async () => {
+    const newBlog = {
+        author: 'Missing Title',
+        url: 'url #4',
+        likes: 777,
+    }
+
+    await api.post('/api/blogs')
+        .send(newBlog)
+        .expect(400)
+})
+
+test('trying to post a blog without author gives status 400', async () => {
+    const newBlog = {
+        title: 'Title is present, but author nowehere to be seen',
+        url: 'url #5',
+        likes: 123,
+    }
+
+    await api.post('/api/blogs')
+        .send(newBlog)
+        .expect(400)
+})
+
 afterAll(() => {
     mongoose.connection.close()
 })
