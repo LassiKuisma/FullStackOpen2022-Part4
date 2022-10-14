@@ -82,7 +82,7 @@ describe('when there are initially some blogs in db', () => {
             .expect(401)
             .expect('Content-Type', /application\/json/)
 
-        expect(result.body.error).toContain('token missing or invalid')
+        expect(result.body.error).toContain('invalid token')
 
 
         const blogsAtEnd = await helper.blogsInDb()
@@ -155,13 +155,17 @@ describe('using a valid token after logging in', () => {
         })
 
         await user.save()
+        const userId = user._id
 
 
         await Blog.deleteMany({})
 
         for (let blog of helper.initialBlogs) {
             let blogObject = new Blog(blog)
+            blogObject.user = userId
             await blogObject.save()
+            user.blogs = user.blogs.concat(blogObject._id.toString())
+            await user.save()
         }
     })
 
@@ -261,10 +265,18 @@ describe('using a valid token after logging in', () => {
 
         const blogsAtStart = await helper.blogsInDb()
         const blogToDelete = blogsAtStart[0]
-        const id = blogToDelete.id
+        const blogId = blogToDelete.id
+
+
+        const userBlogsAtStart = (await helper.usersInDb())
+            .find(user => user.username === 'cats')
+            .blogs
+            .map(blog => blog._id.toString())
+
+        expect(userBlogsAtStart).toContain(blogId)
 
         await api
-            .delete(`/api/blogs/${id}`)
+            .delete(`/api/blogs/${blogId}`)
             .set('Authorization', `Bearer ${token}`)
             .expect(204)
 
@@ -273,6 +285,13 @@ describe('using a valid token after logging in', () => {
 
         const titles = blogsAtEnd.map(blog => blog.title)
         expect(titles).not.toContain(blogToDelete.title)
+
+        const userBlogsAtEnd = (await helper.usersInDb())
+            .find(user => user.username === 'cats')
+            .blogs
+            .map(blog => blog._id.toString())
+
+        expect(userBlogsAtEnd).not.toContain(blogId)
     })
 
     test('deleting blog post that doesnt exist fails with statuscode and message', async () => {
@@ -324,6 +343,49 @@ describe('using a valid token after logging in', () => {
             .send(newBlog)
             .set('Authorization', `Bearer ${token}`)
             .expect(400)
+
+        const blogsAtEnd = await helper.blogsInDb()
+        expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
+    })
+
+    test('deleting a blog someone else posted fails', async () => {
+        const passwordHash = await bcrypt.hash('asddas', 10)
+        const user = new User({
+            username: 'asddas',
+            name: 'asddas',
+            passwordHash,
+        })
+
+        await user.save()
+
+        // login with new user
+        const loginDetails = {
+            username: 'asddas',
+            password: 'asddas'
+        }
+
+        const loginResult = await api
+            .post('/api/login')
+            .send(loginDetails)
+            .expect(200)
+
+        const token = loginResult.body.token
+        expect(token).not.toBe(null)
+
+
+        // blogs are posted by the other user, created earlier
+        const blogsAtStart = await helper.blogsInDb()
+        const blogToDelete = blogsAtStart[0]
+        const blogId = blogToDelete.id
+
+        const result = await api
+            .delete(`/api/blogs/${blogId}`)
+            .set('Authorization', `Bearer ${token}`)
+            .expect(401)
+            .expect('Content-Type', /application\/json/)
+
+        expect(result.body.error).toContain('unauthorized')
+
 
         const blogsAtEnd = await helper.blogsInDb()
         expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
