@@ -91,30 +91,6 @@ describe('when there are initially some blogs in db', () => {
         expect(blogsAtEnd).toEqual(blogsAtStart)
     })
 
-    test('modifying a blog without sending token fails with statuscode and message', async () => {
-        const blogsAtStart = await helper.blogsInDb()
-        const blogToModify = blogsAtStart[0]
-        const id = blogToModify.id
-
-        const newBlog = {
-            likes: 10000,
-        }
-
-        const result = await api
-            .put(`/api/blogs/${id}`)
-            .send(newBlog)
-            .expect(401)
-            .expect('Content-Type', /application\/json/)
-
-        expect(result.body.error).toContain('invalid token')
-
-
-        const blogsAtEnd = await helper.blogsInDb()
-        expect(blogsAtEnd).toHaveLength(blogsAtStart.length)
-
-        expect(blogsAtEnd).toEqual(blogsAtStart)
-    })
-
     test('posting a new blog using an invalid token fails with statuscode and message', async () => {
         const blogsAtStart = await helper.blogsInDb()
 
