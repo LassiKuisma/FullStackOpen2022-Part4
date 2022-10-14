@@ -48,123 +48,27 @@ describe('when there are initially some blogs in db', () => {
         expect(first.id).toBeDefined()
     })
 
-    test('new blog can be posted', async () => {
+    test('posting a new blog without specifying token fails with statuscode and message', async () => {
         const newBlog = {
-            title: 'Newly added blog',
+            title: 'I have no tokens',
             author: 'Person Person',
             url: 'url #2',
             likes: 1,
         }
 
-        await api.post('/api/blogs')
+        const result = await api.post('/api/blogs')
             .send(newBlog)
-            .expect(201)
+            .expect(401)
             .expect('Content-Type', /application\/json/)
 
+
+        expect(result.body.error).toContain('token missing or invalid')
+
         const blogsAtEnd = await helper.blogsInDb()
-        expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length + 1)
+        expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
 
         const contents = blogsAtEnd.map(b => b.title)
-        expect(contents).toContain('Newly added blog')
-    })
-
-    test('posting a blog without specifying amount of likes creates new blog with zero likes', async () => {
-        const newBlog = {
-            title: 'A blog with no likes',
-            author: 'Dewey',
-            url: 'url #3',
-        }
-
-        await api.post('/api/blogs')
-            .send(newBlog)
-            .expect(201)
-            .expect('Content-Type', /application\/json/)
-
-        const blogsAtEnd = await helper.blogsInDb()
-        const blog = blogsAtEnd.find(blog => blog.title === 'A blog with no likes')
-
-        expect(blog.likes).toBe(0)
-    })
-
-    test('posting a blog without title fails with statuscode and message', async () => {
-        const newBlog = {
-            author: 'Missing Title',
-            url: 'url #4',
-            likes: 777,
-        }
-
-        await api.post('/api/blogs')
-            .send(newBlog)
-            .expect(400)
-    })
-
-    test('posting a blog without author fails with statuscode and message', async () => {
-        const newBlog = {
-            title: 'Title is present, but author nowehere to be seen',
-            url: 'url #5',
-            likes: 123,
-        }
-
-        await api.post('/api/blogs')
-            .send(newBlog)
-            .expect(400)
-    })
-
-    test('blog posts can be deleted', async () => {
-        const blogsAtStart = await helper.blogsInDb()
-        const blogToDelete = blogsAtStart[0]
-        const id = blogToDelete.id
-
-        await api.delete(`/api/blogs/${id}`)
-            .expect(204)
-
-        const blogsAtEnd = await helper.blogsInDb()
-        expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length - 1)
-
-        const titles = blogsAtEnd.map(blog => blog.title)
-        expect(titles).not.toContain(blogToDelete.title)
-    })
-
-    test('deleting blog post that doesnt exist fails with statuscode and message', async () => {
-        const id = 123456
-
-        await api.delete(`/api/blogs/${id}`)
-            .expect(400)
-    })
-
-    test('blog posts can be modified', async () => {
-        const blogsAtStart = await helper.blogsInDb()
-        const blogToModify = blogsAtStart[0]
-        const id = blogToModify.id
-
-        const newBlog = {
-            likes: 10000,
-        }
-
-        await api.put(`/api/blogs/${id}`)
-            .send(newBlog)
-            .expect(200)
-
-        const blogsAtEnd = await helper.blogsInDb()
-        expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
-
-        const updatedBlog = blogsAtEnd.find(blog => blog.title === 'Test blog #1')
-        expect(updatedBlog.likes).toBe(10000)
-    })
-
-    test('modifying blog post that doesnt exist fails with statuscode and message', async () => {
-        const id = 123321
-
-        const newBlog = {
-            likes: 10000,
-        }
-
-        await api.put(`/api/blogs/${id}`)
-            .send(newBlog)
-            .expect(400)
-
-        const blogsAtEnd = await helper.blogsInDb()
-        expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
+        expect(contents).toEqual(helper.initialBlogs)
     })
 })
 
@@ -216,6 +120,112 @@ describe('using a valid token after logging in', () => {
 
         const contents = blogsAtEnd.map(b => b.title)
         expect(contents).toContain('How to add blogs using tokens to authenticate')
+    })
+
+    test('posting a blog without specifying amount of likes creates new blog with zero likes', async () => {
+        const newBlog = {
+            title: 'A blog with no likes',
+            author: 'Dewey',
+            url: 'url #3',
+        }
+
+        // TODO: login
+        await api.post('/api/blogs')
+            .send(newBlog)
+            .expect(201)
+            .expect('Content-Type', /application\/json/)
+
+        const blogsAtEnd = await helper.blogsInDb()
+        const blog = blogsAtEnd.find(blog => blog.title === 'A blog with no likes')
+
+        expect(blog.likes).toBe(0)
+    })
+
+    test('posting a blog without title fails with statuscode and message', async () => {
+        const newBlog = {
+            author: 'Missing Title',
+            url: 'url #4',
+            likes: 777,
+        }
+
+        // TODO: login
+        await api.post('/api/blogs')
+            .send(newBlog)
+            .expect(400)
+    })
+
+    test('posting a blog without author fails with statuscode and message', async () => {
+        const newBlog = {
+            title: 'Title is present, but author nowehere to be seen',
+            url: 'url #5',
+            likes: 123,
+        }
+
+        // TODO: login
+        await api.post('/api/blogs')
+            .send(newBlog)
+            .expect(400)
+    })
+
+    test('blog posts can be deleted', async () => {
+        const blogsAtStart = await helper.blogsInDb()
+        const blogToDelete = blogsAtStart[0]
+        const id = blogToDelete.id
+
+        // TODO: login
+        await api.delete(`/api/blogs/${id}`)
+            .expect(204)
+
+        const blogsAtEnd = await helper.blogsInDb()
+        expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length - 1)
+
+        const titles = blogsAtEnd.map(blog => blog.title)
+        expect(titles).not.toContain(blogToDelete.title)
+    })
+
+    test('deleting blog post that doesnt exist fails with statuscode and message', async () => {
+        const id = 123456
+
+        // TODO: login
+        await api.delete(`/api/blogs/${id}`)
+            .expect(400)
+    })
+
+    test('blog posts can be modified', async () => {
+        const blogsAtStart = await helper.blogsInDb()
+        const blogToModify = blogsAtStart[0]
+        const id = blogToModify.id
+
+        const newBlog = {
+            likes: 10000,
+        }
+
+        // TODO: login
+        await api.put(`/api/blogs/${id}`)
+            .send(newBlog)
+            .expect(200)
+
+        const blogsAtEnd = await helper.blogsInDb()
+        expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
+
+        const updatedBlog = blogsAtEnd.find(blog => blog.title === 'Test blog #1')
+        expect(updatedBlog.likes).toBe(10000)
+    })
+
+    test('modifying blog post that doesnt exist fails with statuscode and message', async () => {
+        const id = 123321
+
+        const newBlog = {
+            likes: 10000,
+        }
+
+        // TODO: login
+        await api.put(`/api/blogs/${id}`)
+            .send(newBlog)
+            .expect(400)
+
+        const blogsAtEnd = await helper.blogsInDb()
+        expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
     })
 })
 
