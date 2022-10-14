@@ -8,16 +8,16 @@ const api = supertest(app)
 const Blog = require('../models/blog')
 const User = require('../models/user')
 
-beforeEach(async () => {
-    await Blog.deleteMany({})
-
-    for (let blog of helper.initialBlogs) {
-        let blogObject = new Blog(blog)
-        await blogObject.save()
-    }
-})
-
 describe('when there are initially some blogs in db', () => {
+    beforeEach(async () => {
+        await Blog.deleteMany({})
+
+        for (let blog of helper.initialBlogs) {
+            let blogObject = new Blog(blog)
+            await blogObject.save()
+        }
+    })
+
     test('blogs are returned as json', async () => {
         await api
             .get('/api/blogs')
@@ -49,6 +49,8 @@ describe('when there are initially some blogs in db', () => {
     })
 
     test('posting a new blog without specifying token fails with statuscode and message', async () => {
+        const blogsAtStart = await helper.blogsInDb()
+
         const newBlog = {
             title: 'I have no tokens',
             author: 'Person Person',
@@ -62,13 +64,12 @@ describe('when there are initially some blogs in db', () => {
             .expect('Content-Type', /application\/json/)
 
 
-        expect(result.body.error).toContain('token missing or invalid')
+        expect(result.body.error).toContain('invalid token')
 
         const blogsAtEnd = await helper.blogsInDb()
-        expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
+        expect(blogsAtEnd).toHaveLength(blogsAtStart.length)
 
-        const contents = blogsAtEnd.map(b => b.title)
-        expect(contents).toEqual(helper.initialBlogs)
+        expect(blogsAtEnd).toEqual(blogsAtStart)
     })
 
     test('deleting a blog without sending token fails with statuscode and message', async () => {
@@ -85,10 +86,9 @@ describe('when there are initially some blogs in db', () => {
 
 
         const blogsAtEnd = await helper.blogsInDb()
-        expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
+        expect(blogsAtEnd).toHaveLength(blogsAtStart.length)
 
-        const titles = blogsAtEnd.map(blog => blog.title)
-        expect(titles).toEqual(helper.initialBlogs)
+        expect(blogsAtEnd).toEqual(blogsAtStart)
     })
 
     test('modifying a blog without sending token fails with statuscode and message', async () => {
@@ -106,14 +106,40 @@ describe('when there are initially some blogs in db', () => {
             .expect(401)
             .expect('Content-Type', /application\/json/)
 
-        expect(result.body.error).toContain('token missing or invalid')
+        expect(result.body.error).toContain('invalid token')
 
 
         const blogsAtEnd = await helper.blogsInDb()
-        expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
+        expect(blogsAtEnd).toHaveLength(blogsAtStart.length)
 
-        const titles = blogsAtEnd.map(blog => blog.title)
-        expect(titles).toEqual(helper.initialBlogs)
+        expect(blogsAtEnd).toEqual(blogsAtStart)
+    })
+
+    test('posting a new blog using an invalid token fails with statuscode and message', async () => {
+        const blogsAtStart = await helper.blogsInDb()
+
+        const newBlog = {
+            title: 'I have no tokens',
+            author: 'Person Person',
+            url: 'url #2',
+            likes: 1,
+        }
+
+        const token = 'eyyImInvalidToken'
+
+        const result = await api.post('/api/blogs')
+            .send(newBlog)
+            .set('Authorization', `Bearer ${token}`)
+            .expect(401)
+            .expect('Content-Type', /application\/json/)
+
+
+        expect(result.body.error).toContain('invalid token')
+
+        const blogsAtEnd = await helper.blogsInDb()
+        expect(blogsAtEnd).toHaveLength(blogsAtStart.length)
+
+        expect(blogsAtEnd).toEqual(blogsAtStart)
     })
 })
 
@@ -129,6 +155,14 @@ describe('using a valid token after logging in', () => {
         })
 
         await user.save()
+
+
+        await Blog.deleteMany({})
+
+        for (let blog of helper.initialBlogs) {
+            let blogObject = new Blog(blog)
+            await blogObject.save()
+        }
     })
 
     const getLoginToken = async () => {
@@ -149,7 +183,7 @@ describe('using a valid token after logging in', () => {
     }
 
     test('user can post new blogs', async () => {
-        const token = getLoginToken()
+        const token = await getLoginToken()
 
         const newBlog = {
             title: 'How to add blogs using tokens to authenticate',
@@ -160,7 +194,7 @@ describe('using a valid token after logging in', () => {
 
         await api.post('/api/blogs')
             .send(newBlog)
-            .set('Authorization', token)
+            .set('Authorization', `Bearer ${token}`)
             .expect(201)
             .expect('Content-Type', /application\/json/)
 
@@ -172,7 +206,7 @@ describe('using a valid token after logging in', () => {
     })
 
     test('posting a blog without specifying amount of likes creates new blog with zero likes', async () => {
-        const token = getLoginToken()
+        const token = await getLoginToken()
 
         const newBlog = {
             title: 'A blog with no likes',
@@ -182,7 +216,7 @@ describe('using a valid token after logging in', () => {
 
         await api.post('/api/blogs')
             .send(newBlog)
-            .set('Authorization', token)
+            .set('Authorization', `Bearer ${token}`)
             .expect(201)
             .expect('Content-Type', /application\/json/)
 
@@ -193,7 +227,7 @@ describe('using a valid token after logging in', () => {
     })
 
     test('posting a blog without title fails with statuscode and message', async () => {
-        const token = getLoginToken()
+        const token = await getLoginToken()
 
         const newBlog = {
             author: 'Missing Title',
@@ -203,12 +237,12 @@ describe('using a valid token after logging in', () => {
 
         await api.post('/api/blogs')
             .send(newBlog)
-            .set('Authorization', token)
+            .set('Authorization', `Bearer ${token}`)
             .expect(400)
     })
 
     test('posting a blog without author fails with statuscode and message', async () => {
-        const token = getLoginToken()
+        const token = await getLoginToken()
 
         const newBlog = {
             title: 'Title is present, but author nowehere to be seen',
@@ -218,12 +252,12 @@ describe('using a valid token after logging in', () => {
 
         await api.post('/api/blogs')
             .send(newBlog)
-            .set('Authorization', token)
+            .set('Authorization', `Bearer ${token}`)
             .expect(400)
     })
 
     test('blog posts can be deleted', async () => {
-        const token = getLoginToken()
+        const token = await getLoginToken()
 
         const blogsAtStart = await helper.blogsInDb()
         const blogToDelete = blogsAtStart[0]
@@ -231,7 +265,7 @@ describe('using a valid token after logging in', () => {
 
         await api
             .delete(`/api/blogs/${id}`)
-            .set('Authorization', token)
+            .set('Authorization', `Bearer ${token}`)
             .expect(204)
 
         const blogsAtEnd = await helper.blogsInDb()
@@ -242,18 +276,18 @@ describe('using a valid token after logging in', () => {
     })
 
     test('deleting blog post that doesnt exist fails with statuscode and message', async () => {
-        const token = getLoginToken()
+        const token = await getLoginToken()
 
         const id = 123456
 
         await api
             .delete(`/api/blogs/${id}`)
-            .set('Authorization', token)
+            .set('Authorization', `Bearer ${token}`)
             .expect(400)
     })
 
     test('blog posts can be modified', async () => {
-        const token = getLoginToken()
+        const token = await getLoginToken()
 
         const blogsAtStart = await helper.blogsInDb()
         const blogToModify = blogsAtStart[0]
@@ -266,7 +300,7 @@ describe('using a valid token after logging in', () => {
         await api
             .put(`/api/blogs/${id}`)
             .send(newBlog)
-            .set('Authorization', token)
+            .set('Authorization', `Bearer ${token}`)
             .expect(200)
 
         const blogsAtEnd = await helper.blogsInDb()
@@ -277,7 +311,7 @@ describe('using a valid token after logging in', () => {
     })
 
     test('modifying blog post that doesnt exist fails with statuscode and message', async () => {
-        const token = getLoginToken()
+        const token = await getLoginToken()
 
         const id = 123321
 
@@ -288,7 +322,7 @@ describe('using a valid token after logging in', () => {
         await api
             .put(`/api/blogs/${id}`)
             .send(newBlog)
-            .set('Authorization', token)
+            .set('Authorization', `Bearer ${token}`)
             .expect(400)
 
         const blogsAtEnd = await helper.blogsInDb()
