@@ -168,6 +168,57 @@ describe('when there are initially some blogs in db', () => {
     })
 })
 
+describe('using a valid token after logging in', () => {
+    beforeEach(async () => {
+        await User.deleteMany({})
+
+        const passwordHash = await bcrypt.hash('cats', 10)
+        const user = new User({
+            username: 'cats',
+            name: 'Cats',
+            passwordHash,
+        })
+
+        await user.save()
+    })
+
+    test('user can post new blogs', async () => {
+        const loginDetails = {
+            username: 'cats',
+            password: 'cats'
+        }
+
+        const loginResult = await api
+            .post('/api/login')
+            .send(loginDetails)
+            .expect(200)
+
+        const token = loginResult.body.token
+        expect(token).not.toBe(null)
+
+
+
+        const newBlog = {
+            title: 'How to add blogs using tokens to authenticate',
+            author: 'Jorma',
+            url: 'asd',
+            likes: 500,
+        }
+
+        await api.post('/api/blogs')
+            .send(newBlog)
+            .set('Authorization', token)
+            .expect(201)
+            .expect('Content-Type', /application\/json/)
+
+        const blogsAtEnd = await helper.blogsInDb()
+        expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length + 1)
+
+        const contents = blogsAtEnd.map(b => b.title)
+        expect(contents).toContain('How to add blogs using tokens to authenticate')
+    })
+})
+
 describe('when there is initially one user in db', () => {
     beforeEach(async () => {
         await User.deleteMany({})
