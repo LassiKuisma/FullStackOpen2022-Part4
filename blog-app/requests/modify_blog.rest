@@ -1,0 +1,10 @@
+PUT http://localhost:3003/api/blogs/634c01b8e78bb29450225729
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImNhdHMiLCJpZCI6IjYzNGMwMTBmNTdmMDFiODc2MzE0NDA0MiIsImlhdCI6MTY2NTkyNTQxOH0.bF7BY4fNpSkH1xIbMXursJXo_JgUJlRcmBUe6gFi8cc
+
+{
+    "title": "hmm interesting",
+    "author": "Me",
+    "url": "asd",
+    "likes": "1"
+}
