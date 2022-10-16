@@ -282,12 +282,15 @@ describe('using a valid token after logging in', () => {
     test('deleting blog post that doesnt exist fails with statuscode and message', async () => {
         const token = await getLoginToken()
 
-        const id = 123456
+        const blogsAtStart = await helper.blogsInDb()
+        const blogIdLength = blogsAtStart[0].id.length
+
+        const badId = '1'.repeat(blogIdLength)
 
         await api
-            .delete(`/api/blogs/${id}`)
+            .delete(`/api/blogs/${badId}`)
             .set('Authorization', `Bearer ${token}`)
-            .expect(400)
+            .expect(404)
     })
 
     test('blog posts can be modified', async () => {
@@ -314,23 +317,29 @@ describe('using a valid token after logging in', () => {
         expect(updatedBlog.likes).toBe(10000)
     })
 
-    test('modifying blog post that doesnt exist fails with statuscode and message', async () => {
+    test('modifying blog post that doesnt exist doesnt change any existing blogs', async () => {
         const token = await getLoginToken()
 
-        const id = 123321
+        const blogsAtStart = await helper.blogsInDb()
+        const blogIdLength = blogsAtStart[0].id.length
+
+        const badId = '1'.repeat(blogIdLength)
 
         const newBlog = {
             likes: 10000,
         }
 
         await api
-            .put(`/api/blogs/${id}`)
+            .put(`/api/blogs/${badId}`)
             .send(newBlog)
             .set('Authorization', `Bearer ${token}`)
-            .expect(400)
+            .expect(200)
 
         const blogsAtEnd = await helper.blogsInDb()
         expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
+
+        const blogLikes = blogsAtEnd.map(blog => blog.likes)
+        expect(blogLikes).not.toContain(10000)
     })
 
     test('deleting a blog someone else posted fails', async () => {
