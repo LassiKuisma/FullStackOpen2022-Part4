@@ -26,13 +26,19 @@ describe('when there are initially some blogs in db', () => {
     })
 
     test('corrent number of blogs is returned', async () => {
-        const response = await api.get('/api/blogs')
+        const response = await api
+            .get('/api/blogs')
+            .expect(200)
+            .expect('Content-Type', /application\/json/)
 
         expect(response.body).toHaveLength(helper.initialBlogs.length)
     })
 
     test('a specific blogs is within the returned blogs', async () => {
-        const response = await api.get('/api/blogs')
+        const response = await api
+            .get('/api/blogs')
+            .expect(200)
+            .expect('Content-Type', /application\/json/)
 
         const responseTitles = response.body.map(blog => blog.title)
 
@@ -42,7 +48,10 @@ describe('when there are initially some blogs in db', () => {
     })
 
     test('blogs have a defined id', async () => {
-        const response = await api.get('/api/blogs')
+        const response = await api
+            .get('/api/blogs')
+            .expect(200)
+            .expect('Content-Type', /application\/json/)
 
         const first = response.body[0]
         expect(first.id).toBeDefined()
@@ -64,7 +73,7 @@ describe('when there are initially some blogs in db', () => {
             .expect('Content-Type', /application\/json/)
 
 
-        expect(result.body.error).toContain('invalid token')
+        expect(result.body.error).toContain('token missing or invalid')
 
         const blogsAtEnd = await helper.blogsInDb()
         expect(blogsAtEnd).toHaveLength(blogsAtStart.length)
@@ -82,7 +91,7 @@ describe('when there are initially some blogs in db', () => {
             .expect(401)
             .expect('Content-Type', /application\/json/)
 
-        expect(result.body.error).toContain('invalid token')
+        expect(result.body.error).toContain('token missing or invalid')
 
 
         const blogsAtEnd = await helper.blogsInDb()
