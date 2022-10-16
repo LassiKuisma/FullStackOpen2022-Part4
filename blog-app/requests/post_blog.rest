@@ -1,9 +1,10 @@
 POST http://localhost:3003/api/blogs
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImNhdHMiLCJpZCI6IjYzNGMwMTBmNTdmMDFiODc2MzE0NDA0MiIsImlhdCI6MTY2NTkyNTQxOH0.bF7BY4fNpSkH1xIbMXursJXo_JgUJlRcmBUe6gFi8cc
 
 {
-    "title": "How to post stuff with requests",
-    "author": "Lassi",
-    "url": "https://www.google.com/",
+    "title": "qqq",
+    "author": "Me",
+    "url": "asd",
     "likes": "1"
 }

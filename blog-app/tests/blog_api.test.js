@@ -271,12 +271,17 @@ describe('using a valid token after logging in', () => {
         const titles = blogsAtEnd.map(blog => blog.title)
         expect(titles).not.toContain(blogToDelete.title)
 
-        const userBlogsAtEnd = (await helper.usersInDb())
+        // blogs posted by the user
+        const blogIdsAtEnd = (await helper.usersInDb())
             .find(user => user.username === 'cats')
             .blogs
             .map(blog => blog._id.toString())
 
-        expect(userBlogsAtEnd).not.toContain(blogId)
+        expect(blogIdsAtEnd).not.toContain(blogId)
+
+        // make sure the other blog is not deleted
+        const otherBlogId = blogsAtStart[1].id
+        expect(blogIdsAtEnd).toContain(otherBlogId)
     })
 
     test('deleting blog post that doesnt exist fails with statuscode and message', async () => {
